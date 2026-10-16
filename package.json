@@ -1,6 +1,6 @@
 {
   "name": "user-persona-overlay-lite",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
   "description": "A lightweight Tavern Helper implementation of Persona Overlay.",

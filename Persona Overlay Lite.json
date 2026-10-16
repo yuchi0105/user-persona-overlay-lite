@@ -1,8 +1,8 @@
 {
   "id": "cb702fa4-7fcf-4de8-9af8-2af6236e67a1",
   "name": "Persona Overlay Lite",
-  "content": "import 'https://cdn.jsdelivr.net/gh/yuchi0105/user-persona-overlay-lite@main/dist/persona-overlay-lite/index.js'",
-  "info": "Persona Overlay 的 Tavern Helper 輕量版；直接沿用既有聊天 metadata 與 Persona Library。",
+  "content": "import 'https://cdn.jsdelivr.net/gh/yuchi0105/user-persona-overlay-lite@v1.0.1/dist/persona-overlay-lite/index.js'",
+  "info": "Persona Overlay Lite v1.0.1；最終 Prompt 預覽包含原生使用者角色與聊天專屬補充。",
   "buttons": []
 }
 
