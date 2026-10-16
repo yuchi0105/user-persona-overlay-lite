@@ -124,6 +124,26 @@ export function buildInjectionText(data: OverlayData): string {
   return `[Supplemental persona for ${name}]\n${data.content.trim()}`;
 }
 
+export function buildFinalPromptPreview(
+  personaName: string,
+  personaContent: string,
+  overlayText: string,
+): string {
+  const sections: string[] = [];
+  const nativeContent = personaContent.trim();
+  const supplementalContent = overlayText.trim();
+
+  if (nativeContent) {
+    const name = personaName.trim() || '未命名 Persona';
+    sections.push(`[原生使用者角色｜${name}]\n${nativeContent}`);
+  }
+  if (supplementalContent) {
+    sections.push(supplementalContent);
+  }
+
+  return sections.join('\n\n') || '（目前沒有可預覽的 Persona 內容）';
+}
+
 export function normalizePersonaSettings(raw: unknown): PersonaSettings | null {
   if (!raw || typeof raw !== 'object') {
     return null;

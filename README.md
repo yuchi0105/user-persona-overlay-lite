@@ -39,6 +39,15 @@ Extension 與 Lite 共用 `setExtensionPrompt` ID `user_persona_overlay`，即�
 
 Lite 會比較 Tavern Helper `getPersona('current')` 與 SillyTavern `powerUserSettings`。三項生效配置一致時使用 Helper API；不同時採用完整版 Extension 已驗證的 `powerUserSettings`。
 
+## 最終 Prompt 預覽
+
+面板的「最終 Prompt 預覽」會合併顯示：
+
+1. 目前選擇的 SillyTavern 原生使用者角色內容
+2. 此聊天已啟用的 Supplemental Persona
+
+這是完整效果的預覽。實際生成時，原生使用者角色仍由 SillyTavern 注入，Lite 只注入聊天專屬補充，避免同一份 Persona 重複出現在 Prompt。
+
 ## 開發
 
 ```bash

@@ -2,6 +2,7 @@ import styles from './style.css?raw';
 import {
   appendTemplateContent,
   AppliedTemplate,
+  buildFinalPromptPreview,
   buildInjectionText,
   DEFAULT_DATA,
   InjectionConfig,
@@ -36,7 +37,14 @@ type NativeResolution = {
   config: InjectionConfig | null;
   source: 'helper' | 'power-user';
   personaName: string;
+  personaContent: string;
   comparisonMessage: string;
+};
+
+type HelperPersonaSnapshot = {
+  settings: ReturnType<typeof normalizePersonaSettings>;
+  name: string;
+  description: string;
 };
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -163,9 +171,24 @@ function readPowerUserPersona(): ReturnType<typeof normalizePersonaSettings> {
   });
 }
 
-function readHelperPersona(): ReturnType<typeof normalizePersonaSettings> {
+function readPowerUserPersonaContent(): string {
+  const settings = getContext().powerUserSettings;
+  return settings && typeof settings === 'object' && typeof settings.persona_description === 'string'
+    ? settings.persona_description
+    : '';
+}
+
+function readHelperPersona(): HelperPersonaSnapshot | null {
   try {
-    return typeof getPersona === 'function' ? normalizePersonaSettings(getPersona('current')) : null;
+    if (typeof getPersona !== 'function') {
+      return null;
+    }
+    const persona = getPersona('current');
+    return {
+      settings: normalizePersonaSettings(persona),
+      name: typeof persona.name === 'string' ? persona.name : '',
+      description: typeof persona.description === 'string' ? persona.description : '',
+    };
   } catch (error) {
     console.warn(LOG_PREFIX, 'Tavern Helper Persona API 讀取失敗。', error);
     return null;
@@ -180,16 +203,30 @@ function readPersonaName(): string {
   }
 }
 
+function expandPersonaContent(content: string): string {
+  const context = getContext();
+  try {
+    return typeof context.substituteParams === 'function'
+      ? context.substituteParams(content)
+      : content;
+  } catch (error) {
+    console.warn(LOG_PREFIX, '展開 Persona 巨集失敗，預覽將顯示原始內容。', error);
+    return content;
+  }
+}
+
 function resolveNativePersona(): NativeResolution {
   const powerUser = readPowerUserPersona();
   const helper = readHelperPersona();
-  const personaName = readPersonaName();
+  const personaName = helper?.name || readPersonaName();
+  const personaContent = expandPersonaContent(helper?.description || readPowerUserPersonaContent());
 
-  if (powerUser && helper && personaSettingsEqual(powerUser, helper)) {
+  if (powerUser && helper?.settings && personaSettingsEqual(powerUser, helper.settings)) {
     return {
-      config: mapPersonaSettings(helper),
+      config: mapPersonaSettings(helper.settings),
       source: 'helper',
       personaName,
+      personaContent,
       comparisonMessage: 'Helper Persona API 與原生生效設定一致。',
     };
   }
@@ -198,15 +235,17 @@ function resolveNativePersona(): NativeResolution {
       config: mapPersonaSettings(powerUser),
       source: 'power-user',
       personaName,
+      personaContent,
       comparisonMessage: helper
         ? 'Helper Persona API 與原生生效設定不同，已採用 powerUserSettings。'
         : 'Helper Persona API 暫不可用，已採用 powerUserSettings。',
     };
   }
   return {
-    config: mapPersonaSettings(helper),
+    config: mapPersonaSettings(helper?.settings ?? null),
     source: 'helper',
     personaName,
+    personaContent,
     comparisonMessage: helper
       ? 'powerUserSettings 暫不可用，已採用 Helper Persona API。'
       : '目前無法讀取原生 Persona 設定。',
@@ -346,7 +385,7 @@ function updatePreview(existingState?: ReturnType<typeof getInjectionState>): vo
   $('#upol_follow_warning')
     .toggleClass('upol-hidden', plan.followed)
     .text(plan.fallbackReason ? `⚠ ${plan.fallbackReason}` : '');
-  $('#upol_preview').val(text || '（目前不會注入：聊天未啟用或內容為空）');
+  $('#upol_preview').val(buildFinalPromptPreview(native.personaName, native.personaContent, text));
   detectFullExtension();
 }
 
@@ -657,8 +696,9 @@ function ensurePanel(): void {
               </section>
 
               <section class="upol-card">
-                <div class="upol-card-title">最終實際注入</div>
-                <textarea id="upol_preview" rows="6" readonly></textarea>
+                <div class="upol-card-title">最終 Prompt 預覽</div>
+                <div class="upol-label upol-preview-note">原生使用者角色由 SillyTavern 注入；聊天專屬補充由 Lite 注入。</div>
+                <textarea id="upol_preview" rows="8" readonly></textarea>
               </section>
 
               <section class="upol-card">

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   appendTemplateContent,
+  buildFinalPromptPreview,
   buildInjectionText,
   mapPersonaSettings,
   normalizeAppliedTemplates,
@@ -43,13 +44,36 @@ test('enabled=false 或 content 為空時完全不注入', () => {
   assert.equal(buildInjectionText(normalizeOverlay({ enabled: true, content: '   ' })), '');
 });
 
-test('Preview 與實際注入共用相同格式', () => {
+test('聊天專屬補充與實際注入共用相同格式', () => {
   const text = buildInjectionText(normalizeOverlay({
     enabled: true,
-    nickname: '七七',
+    nickname: '嚮導',
     content: '補充設定',
   }));
-  assert.equal(text, '[Supplemental persona for 七七]\n補充設定');
+  assert.equal(text, '[Supplemental persona for 嚮導]\n補充設定');
+});
+
+test('最終 Prompt 預覽依序包含原生使用者角色與聊天專屬補充', () => {
+  assert.equal(
+    buildFinalPromptPreview(
+      '旅人',
+      '原生 Persona 內容',
+      '[Supplemental persona for 嚮導]\n聊天專屬設定',
+    ),
+    '[原生使用者角色｜旅人]\n原生 Persona 內容\n\n[Supplemental persona for 嚮導]\n聊天專屬設定',
+  );
+});
+
+test('最終 Prompt 預覽可獨立顯示原生 Persona 或補充內容', () => {
+  assert.equal(
+    buildFinalPromptPreview('旅人', '只有原生內容', ''),
+    '[原生使用者角色｜旅人]\n只有原生內容',
+  );
+  assert.equal(
+    buildFinalPromptPreview('', '', '[Supplemental persona for the user]\n只有補充內容'),
+    '[Supplemental persona for the user]\n只有補充內容',
+  );
+  assert.equal(buildFinalPromptPreview('', '   ', '   '), '（目前沒有可預覽的 Persona 內容）');
 });
 
 test('Follow 映射 IN_PROMPT 與 AT_DEPTH/depth/role', () => {

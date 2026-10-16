@@ -18,6 +18,7 @@ type TavernContext = {
   powerUserSettings?: Record<string, unknown>;
   extensionPrompts?: Record<string, { value?: string }>;
   getCurrentChatId?: () => string;
+  substituteParams?: (content: string) => string;
   saveMetadataDebounced?: () => void | Promise<void>;
   saveMetadata?: () => void | Promise<void>;
   setExtensionPrompt: (

@@ -367,6 +367,11 @@
   font-size: 11px;
 }
 
+.upol-preview-note {
+  margin: -2px 0 8px;
+  line-height: 1.5;
+}
+
 .upol-list {
   display: grid;
   gap: 8px;
