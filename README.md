@@ -9,7 +9,7 @@ Persona Overlay Lite 是 [SillyTavern](https://github.com/SillyTavern/SillyTaver
 下載並匯入 [`Persona Overlay Lite.json`](./Persona%20Overlay%20Lite.json) 至 Tavern Helper。腳本會從 jsDelivr 載入：
 
 ```text
-https://cdn.jsdelivr.net/gh/yuchi0105/user-persona-overlay-lite@v1.0.1/dist/persona-overlay-lite/index.js
+https://cdn.jsdelivr.net/gh/yuchi0105/user-persona-overlay-lite@v1.0.2/dist/persona-overlay-lite/index.js
 ```
 
 安裝後由 SillyTavern 輸入欄旁的魔法棒開啟：

@@ -666,7 +666,7 @@ function ensurePanel(): void {
               </label>
               <label class="upol-field">
                 <span>備註名／暱稱</span>
-                <input id="upol_nickname" type="text" maxlength="100" autocomplete="off" placeholder="例如：灰嶺嚮導線">
+                <input id="upol_nickname" type="text" maxlength="100" autocomplete="off">
               </label>
               <label class="upol-field">
                 <span>補充 Persona</span>
