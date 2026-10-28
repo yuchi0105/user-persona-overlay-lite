@@ -81,7 +81,6 @@ export async function loadRuntime(options: { parentBody?: string; library?: unkn
     SillyTavern: { getContext: () => context },
     getPersona: () => ({ position: 0, depth: 2, role: 0, name: 'Bob', description: '原生 Persona' }),
     getCurrentPersonaName: () => 'Bob',
-    getButtonEvent: (name: string) => `button:${name}`,
     tavern_events: {
       CHAT_CHANGED: 'chat_id_changed',
       PERSONA_CHANGED: 'persona_changed',

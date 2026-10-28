@@ -14,13 +14,17 @@ function clickLibraryButton(label: string): void {
   $('#upol_library_list button').filter((_, button) => $(button).text() === label).first().trigger('click');
 }
 
+function openFromWand(): void {
+  click('#persona_overlay_lite_wand');
+}
+
 function pressEscape(target: Document): void {
   target.dispatchEvent(new target.defaultView!.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
 }
 
-test('魔法棒入口與腳本按鈕都能開啟面板', () => {
-  assert.equal($('#persona_overlay_lite_wand').length, 1);
-  runtime.emit('button:Persona Overlay');
+test('魔法棒選單只有一個入口，點擊後開啟面板', () => {
+  assert.equal($('#extensionsMenu #persona_overlay_lite_wand').length, 1);
+  openFromWand();
   assert.equal($('#upol_backdrop').is('[hidden]'), false);
 });
 
@@ -32,7 +36,7 @@ test('Esc 在酒館主頁面按下時會關閉面板', () => {
 });
 
 test('套用存檔會追加內容，暱稱空白時帶入存檔暱稱', () => {
-  runtime.emit('button:Persona Overlay');
+  openFromWand();
   clickLibraryButton('套用');
   assert.equal($('#upol_content').val(), '喜歡貓。');
   assert.equal($('#upol_nickname').val(), '小明');

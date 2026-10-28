@@ -38,6 +38,5 @@ declare const SillyTavern: TavernContext & { getContext?: () => TavernContext };
 declare function getPersona(personaId: 'current' | string): TavernPersona;
 declare function getCurrentPersonaName(): string | null;
 declare function eventOn(eventType: string, listener: (...args: unknown[]) => void): { stop: () => void };
-declare function getButtonEvent(buttonName: string): string;
 declare const tavern_events: Record<string, string>;
 

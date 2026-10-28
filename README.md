@@ -12,14 +12,13 @@ Persona Overlay Lite 是 [SillyTavern](https://github.com/SillyTavern/SillyTaver
 https://cdn.jsdelivr.net/gh/yuchi0105/user-persona-overlay-lite@v1.0.3/dist/persona-overlay-lite/index.js
 ```
 
-安裝後有兩個入口：
+安裝後由 SillyTavern 輸入欄旁的魔法棒開啟：
 
 ```text
 魔法棒 → Persona Overlay
-輸入欄上方的「Persona Overlay」腳本按鈕
 ```
 
-腳本按鈕可在 Tavern Helper 的腳本設定中隱藏。停用或重新載入腳本時，Lite 會撤掉自己的注入；若偵測到完整版 Extension 同時啟用，則保留共用的 Prompt。
+停用或重新載入腳本時，Lite 會撤掉自己的注入；若偵測到完整版 Extension 同時啟用，則保留共用的 Prompt。
 
 ## Zero-copy 相容
 

@@ -32,7 +32,6 @@ const PROMPT_KEY = 'user_persona_overlay';
 const WAND_ID = 'persona_overlay_lite_wand';
 const STYLE_ID = 'persona_overlay_lite_style';
 const BACKDROP_ID = 'upol_backdrop';
-const SCRIPT_BUTTON_NAME = 'Persona Overlay';
 const TEXT_DEBOUNCE_MS = 300;
 const LOG_PREFIX = '[Persona Overlay Lite]';
 
@@ -880,9 +879,6 @@ function registerEvents(): void {
     refreshInjection();
   });
   eventOn(tavern_events.APP_READY ?? 'app_ready', ensureWandEntry);
-  if (typeof getButtonEvent === 'function') {
-    eventOn(getButtonEvent(SCRIPT_BUTTON_NAME), openPanel);
-  }
 }
 
 function init(): void {
