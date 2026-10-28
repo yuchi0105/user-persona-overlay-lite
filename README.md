@@ -9,14 +9,17 @@ Persona Overlay Lite 是 [SillyTavern](https://github.com/SillyTavern/SillyTaver
 下載並匯入 [`Persona Overlay Lite.json`](./Persona%20Overlay%20Lite.json) 至 Tavern Helper。腳本會從 jsDelivr 載入：
 
 ```text
-https://cdn.jsdelivr.net/gh/yuchi0105/user-persona-overlay-lite@v1.0.2/dist/persona-overlay-lite/index.js
+https://cdn.jsdelivr.net/gh/yuchi0105/user-persona-overlay-lite@v1.0.3/dist/persona-overlay-lite/index.js
 ```
 
-安裝後由 SillyTavern 輸入欄旁的魔法棒開啟：
+安裝後有兩個入口：
 
 ```text
 魔法棒 → Persona Overlay
+輸入欄上方的「Persona Overlay」腳本按鈕
 ```
+
+腳本按鈕可在 Tavern Helper 的腳本設定中隱藏。停用或重新載入腳本時，Lite 會撤掉自己的注入；若偵測到完整版 Extension 同時啟用，則保留共用的 Prompt。
 
 ## Zero-copy 相容
 
@@ -46,7 +49,13 @@ Lite 會比較 Tavern Helper `getPersona('current')` 與 SillyTavern `powerUserS
 1. 目前選擇的 SillyTavern 原生使用者角色內容
 2. 此聊天已啟用的 Supplemental Persona
 
-這是完整效果的預覽。實際生成時，原生使用者角色仍由 SillyTavern 注入，Lite 只注入聊天專屬補充，避免同一份 Persona 重複出現在 Prompt。
+預覽會像實際生成一樣展開 `{{user}}` 等巨集。這是完整效果的預覽；實際生成時，原生使用者角色仍由 SillyTavern 注入，Lite 只注入聊天專屬補充，避免同一份 Persona 重複出現在 Prompt。
+
+## 撤回紀錄
+
+「撤回一步」每次套用存檔都會保存一份套用前的內容。為避免聊天檔越來越大，`chatMetadata.user_persona_overlay_undo` 只保留最近 20 筆；開啟聊天時，超過上限的舊紀錄會自動裁掉。
+
+撤回時會一併移除對應的「已追加模板」記錄；若套用後又手動修改過內容，會先詢問是否覆蓋。
 
 ## 開發
 
@@ -55,6 +64,10 @@ npm install
 npm run check
 npm run serve
 ```
+
+`npm run check` 依序執行 typecheck、測試（含以 jsdom 模擬 Tavern Helper iframe 的行為測試）、production build，並確認 Script JSON 與 README 的 jsDelivr tag 和 `package.json` 版本一致。GitHub Actions 會在每次 push 執行相同檢查，並確認 `dist/` 已重新 build。
+
+發版時更新 `package.json`、`Persona Overlay Lite.json` 與 README 的版本號，執行 `npm run check` 後 commit，再建立對應的 `v<版本>` tag。
 
 主要路徑：
 

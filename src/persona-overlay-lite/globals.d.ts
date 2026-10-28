@@ -21,6 +21,9 @@ type TavernContext = {
   substituteParams?: (content: string) => string;
   saveMetadataDebounced?: () => void | Promise<void>;
   saveMetadata?: () => void | Promise<void>;
+  callGenericPopup?: (content: string | Element, type: number) => Promise<unknown>;
+  POPUP_TYPE?: { CONFIRM: number };
+  POPUP_RESULT?: { AFFIRMATIVE: number };
   setExtensionPrompt: (
     promptId: string,
     content: string,
@@ -35,5 +38,6 @@ declare const SillyTavern: TavernContext & { getContext?: () => TavernContext };
 declare function getPersona(personaId: 'current' | string): TavernPersona;
 declare function getCurrentPersonaName(): string | null;
 declare function eventOn(eventType: string, listener: (...args: unknown[]) => void): { stop: () => void };
+declare function getButtonEvent(buttonName: string): string;
 declare const tavern_events: Record<string, string>;
 

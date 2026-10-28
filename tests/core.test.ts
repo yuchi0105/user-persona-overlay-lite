@@ -4,12 +4,15 @@ import {
   appendTemplateContent,
   buildFinalPromptPreview,
   buildInjectionText,
+  capUndoStack,
   mapPersonaSettings,
+  MAX_UNDO_STACK,
   normalizeAppliedTemplates,
   normalizeLibrary,
   normalizeOverlay,
   normalizeUndoStack,
   personaSettingsEqual,
+  planUndoLast,
   PROMPT_POSITIONS,
   PROMPT_ROLES,
   removeAppliedSnapshot,
@@ -155,3 +158,24 @@ test('Undo 與 applied template metadata 接受 Extension 既有陣列', () => {
   ]), [{ id: 'a', name: '模板 A', content: '內容 A' }]);
 });
 
+
+test('撤回紀錄只保留最近幾筆，避免 chatMetadata 無限膨脹', () => {
+  const stack = Array.from({ length: MAX_UNDO_STACK + 5 }, (_, index) => String(index));
+  assert.deepEqual(capUndoStack(stack), stack.slice(-MAX_UNDO_STACK));
+  assert.deepEqual(capUndoStack(['a']), ['a']);
+});
+
+test('撤回一步：未手動修改時直接移除最後一筆追加記錄', () => {
+  const records = [
+    { id: '1', name: 'A', content: '甲' },
+    { id: '2', name: 'B', content: '乙' },
+  ];
+  assert.deepEqual(planUndoLast('甲\n\n乙', '甲', records), { records: records.slice(0, 1), discardsEdits: false });
+});
+
+test('撤回一步：手動修改過時要求確認，並移除已失效的記錄', () => {
+  const records = [{ id: '1', name: 'A', content: '甲' }];
+  assert.deepEqual(planUndoLast('甲\n\n手動', '', records), { records: [], discardsEdits: true });
+  assert.deepEqual(planUndoLast('甲\n\n手動', '甲', records), { records, discardsEdits: true });
+  assert.deepEqual(planUndoLast('原文', '原文', []), { records: [], discardsEdits: false });
+});

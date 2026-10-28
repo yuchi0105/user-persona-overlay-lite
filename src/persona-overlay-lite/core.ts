@@ -274,3 +274,31 @@ export function removeAppliedSnapshot(content: string, snapshot: string): string
   }
   return null;
 }
+
+export const MAX_UNDO_STACK = 20;
+
+export function capUndoStack(stack: string[]): string[] {
+  return stack.length > MAX_UNDO_STACK ? stack.slice(-MAX_UNDO_STACK) : stack;
+}
+
+export type UndoLastPlan = {
+  records: AppliedTemplate[];
+  discardsEdits: boolean;
+};
+
+export function planUndoLast(
+  currentContent: string,
+  previousContent: string,
+  records: AppliedTemplate[],
+): UndoLastPlan {
+  const last = records[records.length - 1];
+  if (last && appendTemplateContent(previousContent, last.content) === currentContent) {
+    return { records: records.slice(0, -1), discardsEdits: false };
+  }
+  // 套用後又手動修改過：恢復會覆蓋這些修改；最後一筆記錄若已不在恢復後的內容中，一併移除。
+  const staleLast = last && removeAppliedSnapshot(previousContent, last.content) === null;
+  return {
+    records: staleLast ? records.slice(0, -1) : records,
+    discardsEdits: currentContent !== previousContent,
+  };
+}

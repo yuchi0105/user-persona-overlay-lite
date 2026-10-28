@@ -1,6 +1,6 @@
 {
   "name": "user-persona-overlay-lite",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "type": "module",
   "description": "A lightweight Tavern Helper implementation of Persona Overlay.",
@@ -8,14 +8,18 @@
     "build:dev": "node ./node_modules/webpack/bin/webpack.js --mode development",
     "build": "node ./node_modules/webpack/bin/webpack.js --mode production",
     "typecheck": "node ./node_modules/typescript/bin/tsc --noEmit",
-    "test": "node --import tsx --test tests/*.test.ts",
+    "test": "node --import tsx --import ./tests/helpers/register-raw.mjs --test tests/*.test.ts",
     "serve": "node scripts/dev-server.mjs",
-    "check": "npm run typecheck && npm test && npm run build"
+    "check": "npm run typecheck && npm test && npm run build && npm run check:release",
+    "check:release": "node scripts/check-release.mjs"
   },
   "devDependencies": {
     "@types/jquery": "^4.0.1",
+    "@types/jsdom": "^21.1.7",
     "@types/node": "^24.0.0",
     "css-loader": "^7.1.5",
+    "jquery": "^3.7.1",
+    "jsdom": "^26.1.0",
     "style-loader": "^4.0.0",
     "ts-loader": "^9.6.2",
     "tsx": "^4.20.6",
@@ -24,4 +28,3 @@
     "webpack-cli": "^7.2.3"
   }
 }
-

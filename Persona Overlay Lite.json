@@ -1,8 +1,18 @@
 {
-  "id": "cb702fa4-7fcf-4de8-9af8-2af6236e67a1",
+  "type": "script",
+  "enabled": false,
   "name": "Persona Overlay Lite",
-  "content": "import 'https://cdn.jsdelivr.net/gh/yuchi0105/user-persona-overlay-lite@v1.0.2/dist/persona-overlay-lite/index.js'",
-  "info": "Persona Overlay Lite v1.0.2；最終 Prompt 預覽包含原生使用者角色與聊天專屬補充。",
-  "buttons": []
+  "id": "cb702fa4-7fcf-4de8-9af8-2af6236e67a1",
+  "content": "import 'https://cdn.jsdelivr.net/gh/yuchi0105/user-persona-overlay-lite@v1.0.3/dist/persona-overlay-lite/index.js'",
+  "info": "Persona Overlay Lite v1.0.3；修正 Esc、停用後殘留注入與撤回紀錄膨脹，新增輸入欄上方的 Persona Overlay 按鈕。",
+  "button": {
+    "enabled": true,
+    "buttons": [
+      {
+        "name": "Persona Overlay",
+        "visible": true
+      }
+    ]
+  },
+  "data": {}
 }
-

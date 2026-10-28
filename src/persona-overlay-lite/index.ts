@@ -4,6 +4,7 @@ import {
   AppliedTemplate,
   buildFinalPromptPreview,
   buildInjectionText,
+  capUndoStack,
   DEFAULT_DATA,
   InjectionConfig,
   InjectionPlan,
@@ -16,6 +17,7 @@ import {
   normalizeUndoStack,
   OverlayData,
   personaSettingsEqual,
+  planUndoLast,
   PROMPT_POSITIONS,
   PROMPT_ROLES,
   removeAppliedSnapshot,
@@ -30,6 +32,7 @@ const PROMPT_KEY = 'user_persona_overlay';
 const WAND_ID = 'persona_overlay_lite_wand';
 const STYLE_ID = 'persona_overlay_lite_style';
 const BACKDROP_ID = 'upol_backdrop';
+const SCRIPT_BUTTON_NAME = 'Persona Overlay';
 const TEXT_DEBOUNCE_MS = 300;
 const LOG_PREFIX = '[Persona Overlay Lite]';
 
@@ -51,6 +54,7 @@ let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let libraryEditorId: string | null = null;
 let libraryEditorMode: 'preview' | 'edit' = 'preview';
 let lastWrittenPrompt = '';
+let hasWrittenPrompt = false;
 let extensionDetected = false;
 
 function getContext(): TavernContext {
@@ -72,6 +76,29 @@ function notify(message: string, type: 'info' | 'success' | 'warning' | 'error' 
 function createId(): string {
   return globalThis.crypto?.randomUUID?.()
     ?? `p_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function getTavernDocument(): Document {
+  return window.parent?.document ?? document;
+}
+
+function getCurrentChatId(): string {
+  const context = getContext();
+  return String(context.getCurrentChatId?.() ?? context.chatId ?? '').trim();
+}
+
+async function confirmAction(message: string): Promise<boolean> {
+  const context = getContext();
+  if (typeof context.callGenericPopup === 'function' && context.POPUP_TYPE) {
+    try {
+      const content = $('<div></div>').text(message).get(0) as HTMLElement;
+      const result = await context.callGenericPopup(content, context.POPUP_TYPE.CONFIRM);
+      return result === (context.POPUP_RESULT?.AFFIRMATIVE ?? 1);
+    } catch (error) {
+      console.warn(LOG_PREFIX, 'SillyTavern 確認視窗開啟失敗，改用瀏覽器確認。', error);
+    }
+  }
+  return globalThis.confirm(message);
 }
 
 function getMetadataStore(): Record<string, unknown> | null {
@@ -123,6 +150,14 @@ function saveUndoStack(stack: string[]): void {
   }
   store[UNDO_METADATA_KEY] = stack;
   persistMetadata();
+}
+
+function trimUndoStack(): void {
+  const stack = getUndoStack();
+  const capped = capUndoStack(stack);
+  if (capped.length !== stack.length) {
+    saveUndoStack(capped);
+  }
 }
 
 function getAppliedTemplates(): AppliedTemplate[] {
@@ -263,6 +298,7 @@ function writePrompt(text: string, plan: InjectionPlan): void {
   const context = getContext();
   const position = text ? plan.position : PROMPT_POSITIONS.NONE;
   lastWrittenPrompt = text;
+  hasWrittenPrompt = true;
   try {
     void Promise.resolve(
       context.setExtensionPrompt(PROMPT_KEY, text, position, plan.depth, false, plan.role),
@@ -272,8 +308,19 @@ function writePrompt(text: string, plan: InjectionPlan): void {
   }
 }
 
+function clearPrompt(): void {
+  try {
+    void Promise.resolve(
+      getContext().setExtensionPrompt(PROMPT_KEY, '', PROMPT_POSITIONS.NONE, DEFAULT_DATA.depth, false, PROMPT_ROLES.SYSTEM),
+    ).catch(error => console.warn(LOG_PREFIX, '清除注入失敗。', error));
+  } catch (error) {
+    console.warn(LOG_PREFIX, '清除注入失敗。', error);
+  }
+}
+
 function refreshInjection(): void {
   const state = getInjectionState();
+  detectFullExtension();
   writePrompt(state.text, state.plan);
   updatePreview(state);
 }
@@ -315,17 +362,12 @@ function commitPanelText(): void {
 }
 
 function getCurrentChatLabel(): string {
-  const context = getContext();
-  const selectedChat = String($('#extensionTopBarChatName option:selected').text() ?? '').trim();
-  if (selectedChat && selectedChat !== '未選擇聊天') {
-    return selectedChat;
-  }
-  const id = context.getCurrentChatId?.() ?? context.chatId ?? '';
-  const character = context.name2 ?? '';
+  const id = getCurrentChatId();
   if (!id) {
     return '尚未載入聊天';
   }
-  return character ? `${character} · ${id}` : id;
+  const character = String(getContext().name2 ?? '').trim();
+  return character && !id.startsWith(character) ? `${character} · ${id}` : id;
 }
 
 function detectFullExtension(): void {
@@ -336,7 +378,7 @@ function detectFullExtension(): void {
     || $('#persona_overlay_wand').length > 0
     || $('#persona_overlay_floating_button').length > 0
     || $('#upo_floating_root').length > 0
-    || Boolean(prompt && prompt !== lastWrittenPrompt);
+    || Boolean(hasWrittenPrompt && prompt && prompt !== lastWrittenPrompt);
   $('#upol_extension_notice').toggleClass('upol-hidden', !extensionDetected);
 }
 
@@ -363,8 +405,12 @@ function roleLabel(role: number): string {
   return 'System';
 }
 
+function isPanelOpen(): boolean {
+  return $(`#${BACKDROP_ID}`).length > 0 && !$(`#${BACKDROP_ID}`).is('[hidden]');
+}
+
 function updatePreview(existingState?: ReturnType<typeof getInjectionState>): void {
-  if (!$(`#${BACKDROP_ID}`).length) {
+  if (!isPanelOpen()) {
     return;
   }
   const state = existingState ?? getInjectionState();
@@ -385,8 +431,9 @@ function updatePreview(existingState?: ReturnType<typeof getInjectionState>): vo
   $('#upol_follow_warning')
     .toggleClass('upol-hidden', plan.followed)
     .text(plan.fallbackReason ? `⚠ ${plan.fallbackReason}` : '');
-  $('#upol_preview').val(buildFinalPromptPreview(native.personaName, native.personaContent, text));
-  detectFullExtension();
+  $('#upol_preview').val(
+    buildFinalPromptPreview(native.personaName, native.personaContent, expandPersonaContent(text)),
+  );
 }
 
 function syncPanel(): void {
@@ -442,29 +489,47 @@ function applyLibraryItem(id: string): void {
     notify(`存檔「${item.name}」內容為空，沒有套用。`, 'warning');
     return;
   }
-  saveUndoStack([...getUndoStack(), data.content]);
-  saveOverlayData({ content });
+  const nickname = data.nickname.trim() ? data.nickname : item.nickname;
+  saveUndoStack(capUndoStack([...getUndoStack(), data.content]));
+  saveOverlayData({ content, nickname });
   saveAppliedTemplates([
     ...getAppliedTemplates(),
     { id: createId(), name: item.name, content: item.content.trim() },
   ]);
+  $('#upol_nickname').val(nickname);
   $('#upol_content').val(content);
   renderAppliedTemplates();
   refreshInjection();
   notify(`已將「${item.name}」追加到目前聊天。`, 'success');
 }
 
-function undoLastTemplate(): void {
-  cancelTextSave();
+async function undoLastTemplate(): Promise<void> {
+  flushTextSave();
   const stack = getUndoStack();
   if (!stack.length) {
     notify('沒有可撤回的 Persona 模板套用。');
     return;
   }
+  const chatId = getCurrentChatId();
   const content = stack[stack.length - 1] ?? '';
+  const records = getAppliedTemplates();
+  const plan = planUndoLast(getOverlayData().content, content, records);
+  if (
+    plan.discardsEdits
+    && !(await confirmAction('套用模板後有手動修改過內容，撤回會一併覆蓋這些修改。要繼續嗎？'))
+  ) {
+    return;
+  }
+  if (getCurrentChatId() !== chatId) {
+    return;
+  }
   saveUndoStack(stack.slice(0, -1));
+  if (plan.records.length !== records.length) {
+    saveAppliedTemplates(plan.records);
+  }
   saveOverlayData({ content });
   $('#upol_content').val(content);
+  renderAppliedTemplates();
   refreshInjection();
   notify('已撤回最近一次 Persona 模板套用。', 'success');
 }
@@ -561,9 +626,9 @@ function saveLibraryEditor(): void {
   }
 }
 
-function deleteLibraryItem(id: string): void {
+async function deleteLibraryItem(id: string): Promise<void> {
   const item = loadLibrary().find(candidate => candidate.id === id);
-  if (!item || !globalThis.confirm(`刪除 Persona 存檔「${item.name}」？目前聊天內容不會受影響。`)) {
+  if (!item || !(await confirmAction(`刪除 Persona 存檔「${item.name}」？目前聊天內容不會受影響。`))) {
     return;
   }
   if (saveLibrary(loadLibrary().filter(candidate => candidate.id !== id))) {
@@ -593,7 +658,7 @@ function renderLibrary(): void {
     const edit = $('<button type="button" class="upol-button">編輯</button>')
       .on('click', () => openLibraryEditor(item.id, 'edit'));
     const remove = $('<button type="button" class="upol-button">刪除</button>')
-      .on('click', () => deleteLibraryItem(item.id));
+      .on('click', () => void deleteLibraryItem(item.id));
     const actions = $('<div class="upol-item-actions"></div>').append(preview, apply, edit, remove);
     container.append($('<div class="upol-item"></div>').append(name, actions));
   });
@@ -611,15 +676,22 @@ function closePanel(): void {
   $(`#${BACKDROP_ID}`).attr('hidden', 'hidden');
 }
 
+function prefersAutoFocus(): boolean {
+  const view = window.parent ?? window;
+  return Boolean(view.matchMedia?.('(pointer: fine) and (min-width: 721px)').matches);
+}
+
 function openPanel(): void {
   ensurePanel();
-  syncPanel();
   $(`#${BACKDROP_ID}`).removeAttr('hidden');
-  $('#upol_nickname').trigger('focus');
+  syncPanel();
+  if (prefersAutoFocus()) {
+    $('#upol_nickname').trigger('focus');
+  }
 }
 
 function ensureStyle(): void {
-  const tavernDocument = window.parent?.document ?? document;
+  const tavernDocument = getTavernDocument();
   if (!tavernDocument.getElementById(STYLE_ID)) {
     const style = tavernDocument.createElement('style');
     style.id = STYLE_ID;
@@ -751,7 +823,7 @@ function ensurePanel(): void {
     refreshInjection();
   });
   $('#upol_nickname, #upol_content').on('input', scheduleTextSave);
-  $('#upol_undo_last').on('click', undoLastTemplate);
+  $('#upol_undo_last').on('click', () => void undoLastTemplate());
   $('#upol_refresh_follow').on('click', () => {
     refreshInjection();
     notify('已重新讀取原生 Persona。');
@@ -794,7 +866,10 @@ function registerEvents(): void {
   eventOn(tavern_events.CHAT_CHANGED ?? 'chat_id_changed', () => {
     cancelTextSave();
     closeLibraryEditor();
-    syncPanel();
+    trimUndoStack();
+    if (isPanelOpen()) {
+      syncPanel();
+    }
     refreshInjection();
   });
   eventOn(tavern_events.PERSONA_CHANGED ?? 'persona_changed', () => {
@@ -805,14 +880,17 @@ function registerEvents(): void {
     refreshInjection();
   });
   eventOn(tavern_events.APP_READY ?? 'app_ready', ensureWandEntry);
+  if (typeof getButtonEvent === 'function') {
+    eventOn(getButtonEvent(SCRIPT_BUTTON_NAME), openPanel);
+  }
 }
 
 function init(): void {
   ensureStyle();
   ensurePanel();
   ensureWandEntry();
-  detectFullExtension();
   registerEvents();
+  trimUndoStack();
   refreshInjection();
   console.info(LOG_PREFIX, '已載入；直接使用既有 Persona Overlay 資料。');
 }
@@ -827,13 +905,20 @@ $(() => {
 });
 
 $(window).on('pagehide', () => {
+  // 角色腳本卸載時可能已切到下一個聊天，不能把未提交的文字寫進新聊天。
   cancelTextSave();
-  $(document).off('keydown.upol');
+  detectFullExtension();
+  if (!extensionDetected) {
+    // 腳本停用或重新載入時撤掉注入；完整版 Extension 仍在時保留共用的 prompt。
+    clearPrompt();
+  }
+  $(getTavernDocument()).off('keydown.upol');
   $(`#${WAND_ID}, #${BACKDROP_ID}, #${STYLE_ID}`).remove();
 });
 
-$(document).on('keydown.upol', event => {
-  if (event.key === 'Escape' && !$(`#${BACKDROP_ID}`).is('[hidden]')) {
+// 腳本跑在 iframe 裡，鍵盤事件發生在酒館主頁面，必須綁在主頁面的 document 上。
+$(getTavernDocument()).on('keydown.upol', event => {
+  if (event.key === 'Escape' && isPanelOpen() && !$('dialog[open]').length) {
     closePanel();
   }
 });
