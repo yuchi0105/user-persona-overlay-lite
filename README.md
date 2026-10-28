@@ -6,10 +6,10 @@ Persona Overlay Lite 是 [SillyTavern](https://github.com/SillyTavern/SillyTaver
 
 ## 安裝
 
-下載並匯入 [`Persona Overlay Lite.json`](./Persona%20Overlay%20Lite.json) 至 Tavern Helper。腳本會從 jsDelivr 載入：
+下載並匯入 [`Persona Overlay Lite.json`](./Persona%20Overlay%20Lite.json) 至 Tavern Helper。腳本會從 jsDelivr 載入固定 commit 的 build：
 
 ```text
-https://cdn.jsdelivr.net/gh/yuchi0105/user-persona-overlay-lite@v1.0.3/dist/persona-overlay-lite/index.js
+https://cdn.jsdelivr.net/gh/yuchi0105/user-persona-overlay-lite@c74510c929e398deb01c99a00d58dcf2d999f4b1/dist/persona-overlay-lite/index.js
 ```
 
 安裝後由 SillyTavern 輸入欄旁的魔法棒開啟：
@@ -66,7 +66,7 @@ npm run serve
 
 `npm run check` 依序執行 typecheck、測試（含以 jsdom 模擬 Tavern Helper iframe 的行為測試）、production build，並確認 Script JSON 與 README 的 jsDelivr tag 和 `package.json` 版本一致。GitHub Actions 會在每次 push 執行相同檢查，並確認 `dist/` 已重新 build。
 
-發版時更新 `package.json`、`Persona Overlay Lite.json` 與 README 的版本號，執行 `npm run check` 後 commit，再建立對應的 `v<版本>` tag。
+發版時先 commit 新的 `dist/`，再把 `Persona Overlay Lite.json` 與 README 的載入網址改成該 commit 的完整 hash（也可以改用 `v<版本>` tag，但 tag 必須先推上 GitHub，否則 jsDelivr 抓不到檔案）。`npm run check:release` 會確認載入的 commit 與目前 build 的 `dist/` 完全相同。
 
 主要路徑：
 

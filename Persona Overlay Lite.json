@@ -3,16 +3,11 @@
   "enabled": false,
   "name": "Persona Overlay Lite",
   "id": "cb702fa4-7fcf-4de8-9af8-2af6236e67a1",
-  "content": "import 'https://cdn.jsdelivr.net/gh/yuchi0105/user-persona-overlay-lite@v1.0.3/dist/persona-overlay-lite/index.js'",
-  "info": "Persona Overlay Lite v1.0.3；修正 Esc、停用後殘留注入與撤回紀錄膨脹，新增輸入欄上方的 Persona Overlay 按鈕。",
+  "content": "import 'https://cdn.jsdelivr.net/gh/yuchi0105/user-persona-overlay-lite@c74510c929e398deb01c99a00d58dcf2d999f4b1/dist/persona-overlay-lite/index.js'",
+  "info": "Persona Overlay Lite v1.0.3；由魔法棒 → Persona Overlay 開啟。修正 Esc、停用後殘留注入與撤回紀錄膨脹。",
   "button": {
     "enabled": true,
-    "buttons": [
-      {
-        "name": "Persona Overlay",
-        "visible": true
-      }
-    ]
+    "buttons": []
   },
   "data": {}
 }
