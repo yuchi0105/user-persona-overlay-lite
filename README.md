@@ -9,7 +9,7 @@ Persona Overlay Lite 是 [SillyTavern](https://github.com/SillyTavern/SillyTaver
 下載並匯入 [`Persona Overlay Lite.json`](./Persona%20Overlay%20Lite.json) 至 Tavern Helper。腳本會從 jsDelivr 載入固定 commit 的 build：
 
 ```text
-https://cdn.jsdelivr.net/gh/yuchi0105/user-persona-overlay-lite@c74510c929e398deb01c99a00d58dcf2d999f4b1/dist/persona-overlay-lite/index.js
+https://cdn.jsdelivr.net/gh/yuchi0105/user-persona-overlay-lite@2e167131f712ce184b546febc1be3250b53a6b54/dist/persona-overlay-lite/index.js
 ```
 
 Tavern Helper 匯入腳本時一律新增一份，不會覆蓋同名腳本。更新版本時請先刪除腳本庫中舊的 Persona Overlay Lite，再匯入新的 JSON 並啟用；舊腳本留著的話，它的設定（例如輸入欄按鈕）也會留著。
