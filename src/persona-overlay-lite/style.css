@@ -420,6 +420,20 @@
   gap: 5px;
 }
 
+.upol-macro-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.upol-macro-bar .upol-button {
+  min-height: 29px;
+  padding: 4px 9px;
+  font-family: var(--monoFontFamily, ui-monospace, monospace);
+}
+
 .upol-item-actions .upol-button {
   min-height: 29px;
   padding: 4px 8px;

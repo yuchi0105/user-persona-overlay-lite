@@ -302,3 +302,20 @@ export function planUndoLast(
     discardsEdits: currentContent !== previousContent,
   };
 }
+
+export const MACRO_SHORTCUTS = Object.freeze([
+  { macro: '{{user}}', title: '插入 {{user}}：生成時替換成目前的使用者名稱' },
+  { macro: '{{char}}', title: '插入 {{char}}：生成時替換成目前的角色名稱' },
+] as const);
+
+export function insertAtSelection(
+  value: string,
+  start: number | null | undefined,
+  end: number | null | undefined,
+  text: string,
+): { value: string; caret: number } {
+  const clamp = (position: number) => Math.min(Math.max(position, 0), value.length);
+  const from = clamp(start ?? value.length);
+  const to = Math.max(from, clamp(end ?? from));
+  return { value: `${value.slice(0, from)}${text}${value.slice(to)}`, caret: from + text.length };
+}

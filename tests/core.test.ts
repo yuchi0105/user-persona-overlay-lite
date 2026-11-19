@@ -5,6 +5,7 @@ import {
   buildFinalPromptPreview,
   buildInjectionText,
   capUndoStack,
+  insertAtSelection,
   mapPersonaSettings,
   MAX_UNDO_STACK,
   normalizeAppliedTemplates,
@@ -178,4 +179,11 @@ test('撤回一步：手動修改過時要求確認，並移除已失效的記�
   assert.deepEqual(planUndoLast('甲\n\n手動', '', records), { records: [], discardsEdits: true });
   assert.deepEqual(planUndoLast('甲\n\n手動', '甲', records), { records, discardsEdits: true });
   assert.deepEqual(planUndoLast('原文', '原文', []), { records: [], discardsEdits: false });
+});
+
+test('快捷變數插入在游標位置，並取代選取的文字', () => {
+  assert.deepEqual(insertAtSelection('喜歡貓。', 0, 0, '{{user}}'), { value: '{{user}}喜歡貓。', caret: 8 });
+  assert.deepEqual(insertAtSelection('甲乙丙', 1, 2, '{{char}}'), { value: '甲{{char}}丙', caret: 9 });
+  assert.deepEqual(insertAtSelection('甲', null, null, '{{user}}'), { value: '甲{{user}}', caret: 9 });
+  assert.deepEqual(insertAtSelection('甲', 9, 3, '{{user}}'), { value: '甲{{user}}', caret: 9 });
 });

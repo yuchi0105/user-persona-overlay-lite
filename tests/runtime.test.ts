@@ -80,6 +80,32 @@ test('預覽會展開補充 Persona 裡的巨集', async () => {
   assert.equal(runtime.prompts.user_persona_overlay?.value, '[Supplemental persona for 小明]\n{{user}} 喜歡貓。');
 });
 
+test('快捷變數按鈕會插入到游標位置並保存', async () => {
+  const textarea = $('#upol_content').val('喜歡貓。').get(0) as HTMLTextAreaElement;
+  textarea.setSelectionRange(0, 0);
+  $('#upol_content').closest('.upol-card').find('.upol-macro-button').first().trigger('click');
+  assert.equal(textarea.value, '{{user}}喜歡貓。');
+  assert.equal(textarea.selectionStart, 8);
+
+  textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+  $('#upol_content').closest('.upol-card').find('.upol-macro-button[data-upol-macro="{{char}}"]').trigger('click');
+  assert.equal(textarea.value, '{{user}}喜歡貓。{{char}}');
+  await runtime.tick(350);
+  assert.equal((runtime.chatMetadata.user_persona_overlay as { content: string }).content, '{{user}}喜歡貓。{{char}}');
+});
+
+test('存檔預覽模式隱藏快捷變數，編輯模式才顯示', () => {
+  click('[data-upol-tab="library"]');
+  clickLibraryButton('預覽');
+  assert.equal($('#upol_library_editor .upol-macro-bar').hasClass('upol-hidden'), true);
+  clickLibraryButton('編輯');
+  assert.equal($('#upol_library_editor .upol-macro-bar').hasClass('upol-hidden'), false);
+  $('#upol_library_editor .upol-macro-button').first().trigger('click');
+  assert.match(String($('#upol_library_edit_content').val()), /\{\{user\}\}/);
+  click('#upol_library_edit_close');
+  click('[data-upol-tab="chat"]');
+});
+
 test('切換聊天時會把過長的撤回紀錄裁到上限', () => {
   const undo = Array.from({ length: 35 }, (_, index) => `舊內容 ${index}`);
   runtime.setChat('Alice - chat B', { user_persona_overlay_undo: undo });

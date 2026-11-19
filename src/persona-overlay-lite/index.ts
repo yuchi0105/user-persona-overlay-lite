@@ -8,7 +8,9 @@ import {
   DEFAULT_DATA,
   InjectionConfig,
   InjectionPlan,
+  insertAtSelection,
   LibraryItem,
+  MACRO_SHORTCUTS,
   mapPersonaSettings,
   normalizeAppliedTemplates,
   normalizeLibrary,
@@ -590,6 +592,30 @@ function openLibraryEditor(id: string, mode: 'preview' | 'edit'): void {
   $('#upol_library_edit_nickname').val(item.nickname).prop('readonly', !editing);
   $('#upol_library_edit_content').val(item.content).prop('readonly', !editing);
   $('#upol_library_edit_save').toggleClass('upol-hidden', !editing);
+  $('#upol_library_editor .upol-macro-bar').toggleClass('upol-hidden', !editing);
+}
+
+function macroBarHtml(targetId: string): string {
+  const buttons = MACRO_SHORTCUTS.map(({ macro, title }) =>
+    `<button type="button" class="upol-button upol-macro-button" data-upol-macro="${macro}" title="${title}">${macro}</button>`,
+  ).join('');
+  return `<div class="upol-macro-bar" data-upol-macro-target="${targetId}"><span class="upol-label">快捷變數</span>${buttons}</div>`;
+}
+
+function insertMacro(targetId: string, macro: string): void {
+  const textarea = $(`#${targetId}`).get(0) as HTMLTextAreaElement | undefined;
+  if (!textarea || textarea.readOnly || !macro) {
+    return;
+  }
+  const wasFocused = getTavernDocument().activeElement === textarea;
+  const result = insertAtSelection(textarea.value, textarea.selectionStart, textarea.selectionEnd, macro);
+  textarea.value = result.value;
+  // 手機上原本沒在輸入時不主動叫出鍵盤，只移動游標。
+  if (wasFocused || prefersAutoFocus()) {
+    textarea.focus();
+  }
+  textarea.setSelectionRange(result.caret, result.caret);
+  $(textarea).trigger('input');
 }
 
 function closeLibraryEditor(): void {
@@ -743,6 +769,7 @@ function ensurePanel(): void {
                 <span>補充 Persona</span>
                 <textarea id="upol_content" rows="9" placeholder="只會額外注入，不修改原生 Persona 或聊天記錄。"></textarea>
               </label>
+              ${macroBarHtml('upol_content')}
               <div class="upol-actions">
                 <button id="upol_undo_last" class="upol-button" type="button">
                   <i class="fa-solid fa-rotate-left"></i> 撤回一步
@@ -785,6 +812,7 @@ function ensurePanel(): void {
               <label class="upol-field"><span>存檔名稱</span><input id="upol_library_edit_name" type="text"></label>
               <label class="upol-field"><span>暱稱</span><input id="upol_library_edit_nickname" type="text"></label>
               <label class="upol-field"><span>內容</span><textarea id="upol_library_edit_content" rows="8"></textarea></label>
+              ${macroBarHtml('upol_library_edit_content')}
               <div class="upol-actions">
                 <button id="upol_library_edit_save" class="upol-button is-primary" type="button">儲存修改</button>
                 <button id="upol_library_edit_close" class="upol-button" type="button">關閉</button>
@@ -813,6 +841,15 @@ function ensurePanel(): void {
     if (event.target === panel.get(0)) {
       closePanel();
     }
+  });
+  // mousedown 不搶走 textarea 的焦點與選取範圍，click 再插入變數。
+  panel.on('mousedown', '.upol-macro-button', event => event.preventDefault());
+  panel.on('click', '.upol-macro-button', function () {
+    const button = $(this);
+    insertMacro(
+      String(button.closest('.upol-macro-bar').attr('data-upol-macro-target') ?? ''),
+      String(button.attr('data-upol-macro') ?? ''),
+    );
   });
   $('.upol-tab').on('click', function () {
     setActiveTab($(this).data('upol-tab') === 'library' ? 'library' : 'chat');
